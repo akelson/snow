@@ -2,10 +2,11 @@ import numpy as np
 
 class PinholeCamera(object):
     def __init__(self, f, sensor_size):
-        sensor_size = np.array(sensor_size)
+        print(sensor_size)
+        self.sensor_size = np.array(sensor_size)
 
         # Assume 35mm focal plane
-        px_pitch = 35e-3 / sensor_size[0]
+        px_pitch = 35e-3 / self.sensor_size[0]
 
         # Focal length in px
         f_px = f / px_pitch
@@ -16,17 +17,21 @@ class PinholeCamera(object):
         self.K[2, 2] = 1
 
         # Principle point at center of focal plane
-        principle_pt = np.array(sensor_size / 2)
+        principle_pt = np.array(self.sensor_size / 2)
 
         self.K[0, 2] = principle_pt[0]
         self.K[1, 2] = principle_pt[1]
 
     def project(self, x):
-        z = x[2, :]
-        x = np.matmul(self.K, x)
-        x = x / x[2, :]
-        x[2, :] = z
-        return x
+        uv = np.matmul(self.K, x)
+        uv /= uv[2, :]
+        uv[2, :] = x[2, :]
+        in_sensor = ((uv[0,:] >= 0) &
+                     (uv[0,:] < self.sensor_size[0]) &
+                     (uv[1,:] >= 0) &
+                     (uv[1,:] < self.sensor_size[1]))
+        uv = uv[:, in_sensor]
+        return uv
 
 def resetSnowflakes(a):
     if a[1] < -5:
@@ -43,8 +48,8 @@ class Snow(object):
         self.pos += np.array([[0], [0], [-12]])
 
         self.pos = np.vstack((self.pos, np.ones((1, num_snowflakes))))
-        self.gravity = 5e-3
-        self.turbulance = 2e-3
+        self.gravity = 25e-3
+        self.turbulance = 5e-3
 
     def step(self):
         delta_pos_gravity = self.gravity * np.array([[0], [-1], [0], [0]])
