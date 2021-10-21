@@ -7,7 +7,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((640, 480))
 
     camera = PinholeCamera(50e-3, screen_size)
-    snowflakes = Snow(10000, camera)
+    snowflakes = Snow(1500, camera)
 
     while True:
         for event in pygame.event.get():
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         x_all = snowflakes.project()
 
         for x in x_all.T:
-            size = 1 / x[2]
+            size = -15 / x[2]
             pygame.draw.circle(screen, (255, 255, 255), (x[0], x[1]), size)
 
         pygame.display.update()

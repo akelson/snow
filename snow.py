@@ -21,12 +21,16 @@ class PinholeCamera(object):
         self.K[0, 2] = principle_pt[0]
         self.K[1, 2] = principle_pt[1]
 
-        print(self.K)
-
     def project(self, x):
+        z = x[2, :]
         x = np.matmul(self.K, x)
         x = x / x[2, :]
+        x[2, :] = z
         return x
+
+def resetSnowflakes(a):
+    if a[1] < -5:
+        a[1] = 5
 
 class Snow(object):
     def __init__(self, num_snowflakes, camera):
@@ -34,19 +38,22 @@ class Snow(object):
         self.camera = camera
         self.pos = np.random.rand(3, num_snowflakes) - .5
 
-        self.pos *= np.array([[1], [1], [10]])
+        self.pos *= np.array([[10], [10], [20]])
 
-        self.pos += np.array([[0], [0], [-5]])
+        self.pos += np.array([[0], [0], [-12]])
 
         self.pos = np.vstack((self.pos, np.ones((1, num_snowflakes))))
-        self.gravity = 300e-6
+        self.gravity = 5e-3
+        self.turbulance = 2e-3
 
     def step(self):
         delta_pos_gravity = self.gravity * np.array([[0], [-1], [0], [0]])
-        delta_pos_turbulance = np.random.normal(0, 200e-6, [3, self.num_snowflakes])
+        delta_pos_turbulance = np.random.normal(0, self.turbulance, [3, self.num_snowflakes])
         delta_pos_turbulance = np.vstack((delta_pos_turbulance, np.zeros((1, self.num_snowflakes))))
         self.pos += delta_pos_gravity
         self.pos += delta_pos_turbulance
+
+        np.apply_along_axis(resetSnowflakes, 0, self.pos)
 
     def project(self):
         return self.camera.project(self.pos)
